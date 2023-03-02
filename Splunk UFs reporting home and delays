@@ -1,0 +1,9 @@
+| tstats latest(_time) AS lastTime WHERE index=_internal host="*-Y-*" OR host="*-X-*" BY host|search host="*-Y-*" OR host="*-X-*"
+| eval current=now()| eval Age_Hours=round(((current-lastTime)/60/60),2)
+| rangemap field=Age_Hours default=severe Normal=0-2 Warning=2-4 Severe=4-48
+| stats max(current) AS "Current Time" max(lastTime) AS "Latest Event" by range host Age_Hours
+| convert ctime(*Time) ctime("Latest Event")|rename range as Status, host as Host
+|fields  Host "Current Time" "Latest Event" Age_Hours Status|sort - Age_Hours
+|join type=left Host [search index=_internal version=* group=tcpin_connections hostname="*-Y-*" OR hostname="*-X-*"
+|stats latest(os) as os, latest(version) as version by hostname 
+| rename hostname as Host]has context menu
